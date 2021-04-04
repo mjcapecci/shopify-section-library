@@ -1,0 +1,195 @@
+<!-- This is a template for creating a tabulated SIZE CHART page -->
+
+<style>
+  .table-wrapper {
+    transition: all 0.5s ease;
+  }
+
+  .size-chart-buttons {
+    display: flex;
+    border: none;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 0.5px solid rgb(187, 187, 187);
+  }
+
+  .size-chart-buttons button {
+    padding-bottom: 1rem;
+    outline: none;
+    margin: 0 1rem;
+    font-size: 1.3rem;
+    border: none;
+    background: none;
+  }
+
+  .unit-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgb(187, 187, 187);
+  }
+
+  .unit-buttons button {
+    padding-bottom: 1rem;
+    outline: none;
+    margin: 0 1rem;
+    font-size: 1.3rem;
+    border: none;
+    background: none;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .selected {
+    position: relative;
+  }
+
+  .selected::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 45%;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+
+    border-bottom: 5px solid rgb(187, 187, 187);
+  }
+
+  .table-selected {
+    display: block;
+  }
+</style>
+
+<div class="page-width">
+  <div class="grid">
+    <div class="grid__item medium-up--five-sixths medium-up--push-one-twelfth">
+      <div class="section-header text-center">
+        <h1>{{ page.title }}</h1>
+      </div>
+
+      <div class="rte hidden">
+        <div class="size-chart-buttons"></div>
+        <div class="unit-buttons">
+          <button id="cm-button">Cm</button>
+          <button id="in-button">Inch</button>
+        </div>
+        {{ page.content }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentSelection;
+  let buttonFlexDiv;
+  let pageContent;
+  let pTags = [];
+  let tableTags = [];
+  let selectedUnit;
+  let cmButton = document.getElementById('cm-button');
+  let inButton = document.getElementById('in-button');
+
+  /*
+    Depending on theme, references to 'scrollable-wrapper' class may need to be updated.
+    To learn which class to update to, inspect page source and look at the classname of the theme's table element.
+  */
+
+  // ----- ON LOAD -----
+
+  window.onload = () => {
+    // defines variables global to the script
+    buttonFlexDiv = document.querySelector('.size-chart-buttons');
+    pageContent = document.querySelector('.rte');
+
+    // filter paragraph tags, create buttons with them, and set default selection as the first P tag
+
+    pageContent.childNodes.forEach((node) => {
+      node.nodeName.toLowerCase() === 'p' && pTags.push(node);
+      node?.classList?.contains('scrollable-wrapper') && tableTags.push(node);
+    });
+
+    pTags.forEach((tag) => {
+      let node = document.createElement('button');
+      node.addEventListener('click', (e) => handleSelect(e, null));
+      let textNode = document.createTextNode(tag.innerText);
+      node.appendChild(textNode);
+      buttonFlexDiv.appendChild(node);
+    });
+
+    // hide all p tags by default
+    pTags.forEach((tag) => tag.classList.add('hidden'));
+
+    // hide all tables by default
+    tableTags.forEach((tag) => tag.classList.add('hidden'));
+
+    handleSelect(null, buttonFlexDiv.childNodes[0]);
+
+    // finally, show page content
+    pageContent.classList.remove('hidden');
+
+    cmButton.addEventListener('click', () => handleUnitSelect('in'));
+    inButton.addEventListener('click', () => handleUnitSelect('cm'));
+
+    handleUnitSelect('in');
+  };
+
+  // ----- AFTER LOAD -----
+
+  // handle selections
+  function handleSelect(e, node) {
+    removeCurrentSelection();
+    if (e) {
+      findSiblingTable(e.srcElement.innerText).classList.remove('hidden');
+      e.srcElement.classList.add('selected');
+      currentSelection = e.srcElement;
+    } else {
+      findSiblingTable(node.innerText).classList.remove('hidden');
+      node.classList.add('selected');
+      currentSelection = node;
+    }
+  }
+
+  function removeCurrentSelection() {
+    buttonFlexDiv.childNodes.forEach((node) =>
+      node.classList.remove('selected')
+    );
+    tableTags.forEach((table) => {
+      if (!table.classList.contains('hidden')) {
+        table.classList.add('hidden');
+      }
+    });
+  }
+
+  function findSiblingTable(ptext) {
+    const tableIsUnderThisTag = pTags.filter(
+      (tag) => tag.innerText === ptext
+    )[0];
+
+    return selectedUnit === 'cm'
+      ? tableIsUnderThisTag.nextSibling.nextSibling
+      : tableIsUnderThisTag.nextSibling.nextSibling.nextSibling.nextSibling;
+  }
+
+  //  select unit
+  function handleUnitSelect(currentUnit) {
+    cmButton.classList.remove('selected');
+    inButton.classList.remove('selected');
+
+    if (currentUnit === 'cm') {
+      selectedUnit = 'in';
+      inButton.classList.add('selected');
+    } else {
+      selectedUnit = 'cm';
+      cmButton.classList.add('selected');
+    }
+    handleSelect(null, currentSelection);
+  }
+</script>
